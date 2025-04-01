@@ -1,0 +1,25 @@
+name: ci/cd with terraform
+on:
+  push:
+    branches:
+      - complete-ci/cd-with-terraform
+env:
+  aws_acess: ${{ secrets.aws_acess }}
+  aws_key: ${{ secrets.aws_key }}
+  privatekey: ${{ secrets.privatekey:}}
+  publickey: ${{ secrets. publickey }}
+  aws_region: us-east-1
+
+
+jobs:
+  deploy-infra:
+   runs-on: ubuntu-latest
+   steps:
+    - name: checkout
+      uses: action/checkout@v2
+    - name: setup terraform
+       uses: hashicrop/setup=terraform@v1
+       with:
+        terraform_wrapper: flase
+    - name: terraform init
+        run: terraform init
