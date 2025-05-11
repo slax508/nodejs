@@ -23,15 +23,15 @@ jobs:
           distribution: 'adopt'
 
       # Step 3: Run SonarQube analysis
-      - name: SonarQube Analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          # Replace 'your-sonar-project-key' with your actual SonarQube project key
-          sonar-scanner \
-            -Dsonar.projectKey=your-sonar-project-key \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+      # - name: SonarQube Analysis
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   run: |
+      #     # Replace 'your-sonar-project-key' with your actual SonarQube project key
+      #     sonar-scanner \
+      #       -Dsonar.projectKey=your-sonar-project-key \
+      #       -Dsonar.host.url=https://sonarcloud.io \
+      #       -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       # Step 4: Build Docker image with a unique tag
       - name: Build Docker Image
@@ -45,7 +45,7 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
 
-      # Step 6: Scan the Docker image
+      # Step 6: Scan the Docker images
       - name: Scan Docker Image
         run: |
           ./trivy image sandhya0593/starbucksk8s:${{ github.sha }}
