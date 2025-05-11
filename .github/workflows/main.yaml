@@ -5,66 +5,60 @@ on:
     branches:
       - main
   pull_request:
-permissions:
-  contents: write # Required to push changes to the repository
-env:
-  KUBERNETES_DEPLOYMENT_FILE: K8s/deployment.yml # Kubernetes deployment file path
+
 jobs:
-  ci-pipeline:
+  build-and-scan:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout Code
+      # Step 1: Checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Java for SonarQube
+      # Step 2: Set up Java for SonarQube analysis
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'adopt'
 
-      # Step 3: Run SonarQube analysis
-      # - name: SonarQube Analysis
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   run: |
-      #     # Replace 'your-sonar-project-key' with your actual SonarQube project key
-      #     sonar-scanner \
-      #       -Dsonar.projectKey=your-sonar-project-key \
-      #       -Dsonar.host.url=https://sonarcloud.io \
-      #       -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
-      # Step 4: Build Docker image with a unique tag
-      - name: Build Docker Image
+      # Step 3: SonarQube analysis (assuming SonarQube is configured)
+      - name: SonarQube Scan
         env:
-          IMAGE_TAG: ${{ github.sha }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          docker build -t sandhya0593/starbucksk8s:${IMAGE_TAG} .
+          ./gradlew sonarqube \
+            -Dsonar.projectKey=your_project_key \
+            -Dsonar.host.url=https://sonarcloud.io
+
+      # Step 4: Build Docker image with unique tag
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG=$(date +%s)
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          docker build -t sandhya0593/starbucksk8ss:$IMAGE_TAG .
 
       # Step 5: Install Trivy for scanning
-      - name: Install Trivy and scan
+      - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-          export PATH=$PATH:$(pwd)/bin
-          trivy image --exit-code 0 --severity HIGH,CRITICAL sandhya0593/starbucksk8s:${{ github.sha }}
 
-      # Step 7: Push Docker image to Docker Hub
-      - name: Push Docker Image
+      # Step 6: Scan Docker image
+      - name: Scan Docker image
+        run: |
+          trivy image sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}
+
+      # Step 7: Push Docker image to registry
+      - name: Push Docker image
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-          docker push sandhya0593/starbucksk8s:${{ github.sha }}
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          docker push sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}
 
-       # Step 8: Update Kubernetes deployment file with new image tag
-      - name: Update Kubernetes Deployment
+      # Step 8: Update Kubernetes deployment file
+      - name: Update Kubernetes deployment
         run: |
-          sed -i "s|image: sandhya0593/starbucksk8s:.*|image: sandhya0593/starbucksk8s:$IMAGE_TAG|g" $KUBERNETES_DEPLOYMENT_FILE
-          git config --global user.name "slax508"
-          git config --global user.email "sankulaxman1998@gmail.com"
-          git add $KUBERNETES_DEPLOYMENT_FILE
-          git commit -m "Update deployment image to sandhya0593/starbucksk8s:$IMAGE_TAG"
-          git push
+          sed -i "s|image: sandhya0593/starbucksk8ss:.*|image: sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}|" k8s/deployment.yml
+          echo "Updated image tag in k8s/deployment.yml to ${{ env.IMAGE_TAG }}"
+      
