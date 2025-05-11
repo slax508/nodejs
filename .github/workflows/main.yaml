@@ -1,0 +1,65 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ci-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Java for SonarQube
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+
+      # Step 3: Run SonarQube analysis
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          # Replace 'your-sonar-project-key' with your actual SonarQube project key
+          sonar-scanner \
+            -Dsonar.projectKey=your-sonar-project-key \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # Step 4: Build Docker image with a unique tag
+      - name: Build Docker Image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t sandhya0593/starbucksk8s:${IMAGE_TAG} .
+
+      # Step 5: Install Trivy for scanning
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+
+      # Step 6: Scan the Docker image
+      - name: Scan Docker Image
+        run: |
+          ./trivy image sandhya0593/starbucksk8s:${{ github.sha }}
+
+      # Step 7: Push Docker image to Docker Hub
+      - name: Push Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+          docker push sandhya0593/starbucksk8s:${{ github.sha }}
+
+      # Step 8: Update Kubernetes deployment file with the new image tag
+      - name: Update Kubernetes Deployment
+        run: |
+          sed -i "s|image: sandhya0593/starbucksk8s:.*|image: sandhya0593/starbucksk8s:${{ github.sha }}|g" k8s/deployment.yaml
+          cat k8s/deployment.yaml
