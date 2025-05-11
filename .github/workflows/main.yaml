@@ -41,10 +41,11 @@ jobs:
           docker build -t sandhya0593/starbucksk8s:${IMAGE_TAG} .
 
       # Step 5: Install Trivy for scanning
-      - name: Install Trivy
+      - name: Install Trivy and scan
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-          echo "~/.local/bin" >> $GITHUB_PATH
+          export PATH=$PATH:$(pwd)/bin
+          trivy image --exit-code 1 --severity HIGH,CRITICAL sandhya0593/starbucksk8s:${{ github.sha }}
 
       # Step 6: Scan the Docker images
       - name: Scan Docker Image
