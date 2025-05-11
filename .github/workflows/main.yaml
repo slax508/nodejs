@@ -66,5 +66,5 @@ jobs:
           git config --global user.name "slax508"
           git config --global user.email "sankulaxman1998@gmail.com"
           git add $KUBERNETES_DEPLOYMENT_FILE
-          git commit -m "Update deployment image to $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG"
+          git commit -m "Update deployment image to sandhya0593/starbucksk8s:$IMAGE_TAG"
           git push
