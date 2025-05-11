@@ -23,13 +23,13 @@ jobs:
           distribution: 'zulu'
 
       # Step 3: SonarQube analysis (assuming SonarQube is configured)
-      - name: SonarQube Scan
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          ./gradlew sonarqube \
-            -Dsonar.projectKey=your_project_key \
-            -Dsonar.host.url=https://sonarcloud.io
+      # - name: SonarQube Scan
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   run: |
+      #     ./gradlew sonarqube \
+      #       -Dsonar.projectKey=your_project_key \
+      #       -Dsonar.host.url=https://sonarcloud.io
 
       # Step 4: Build Docker image with unique tag
       - name: Build Docker image
