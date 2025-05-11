@@ -51,11 +51,17 @@ jobs:
           docker push $DOCKER_USERNAME/$DOCKER_REPO:latest
 
       # Step 7: Update Kubernetes deployment file with new image tag
-      - name: Update Kubernetes Deployment
-        run: |
-          sed -i "s|image: $DOCKER_USERNAME/$DOCKER_REPO:.*|image: $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG|g" $KUBERNETES_DEPLOYMENT_FILE
-          git config --global user.name "slax508"
-          git config --global user.email "sankulaxman1998@gmail.com"
-          git add $KUBERNETES_DEPLOYMENT_FILE
-          git commit -m "Update deployment image to $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG"
-          git push
+    - name: Update Kubernetes Deployment
+      run: |
+       sed -i "s|image: $DOCKER_USERNAME/$DOCKER_REPO:.*|image: $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG|g" $KUBERNETES_DEPLOYMENT_FILE
+       git config --global user.name "slax508"
+       git config --global user.email "sankulaxman1998@gmail.com"
+       # Ensure the Kubernetes deployment file is staged
+       git add $KUBERNETES_DEPLOYMENT_FILE
+       # Check if there are changes to commit
+       if git diff-index --quiet HEAD --; then
+      echo "No changes to commit."
+      else
+        git commit -m "Update deployment image to $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG"
+        git push
+   fi
