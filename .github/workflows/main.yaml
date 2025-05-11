@@ -44,11 +44,12 @@ jobs:
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+          export PATH=$PATH:/home/runner/.local/bin 
 
       # Step 6: Scan the Docker images
       - name: Scan Docker Image
         run: |
-          ./trivy image sandhya0593/starbucksk8s:${{ github.sha }}
+          trivy image sandhya0593/starbucksk8s:${{ github.sha }}
 
       # Step 7: Push Docker image to Docker Hub
       - name: Push Docker Image
@@ -62,5 +63,5 @@ jobs:
       # Step 8: Update Kubernetes deployment file with the new image tag
       - name: Update Kubernetes Deployment
         run: |
-          sed -i "s|image: sandhya0593/starbucksk8s:.*|image: sandhya0593/starbucksk8s:${{ github.sha }}|g" k8s/deployment.yaml
-          cat k8s/deployment.yaml
+          sed -i "s|image: sandhya0593/starbucksk8s:.*|image: sandhya0593/starbucksk8s:${{ github.sha }}|g" k8s/deployment.yml
+          cat k8s/deployment.yml
