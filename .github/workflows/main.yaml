@@ -5,7 +5,10 @@ on:
     branches:
       - main
   pull_request:
-
+permissions:
+  contents: write # Required to push changes to the repository
+env:
+  KUBERNETES_DEPLOYMENT_FILE: K8s/deployment.yml # Kubernetes deployment file path
 jobs:
   ci-pipeline:
     runs-on: ubuntu-latest
@@ -56,8 +59,12 @@ jobs:
           echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
           docker push sandhya0593/starbucksk8s:${{ github.sha }}
 
-      # Step 8: Update Kubernetes deployment file with the new image tag
+       # Step 8: Update Kubernetes deployment file with new image tag
       - name: Update Kubernetes Deployment
         run: |
-          sed -i "s|image: sandhya0593/starbucksk8s:.*|image: sandhya0593/starbucksk8s:${{ github.sha }}|g" k8s/deployment.yml
-          cat k8s/deployment.yml
+          sed -i "s|image: sandhya0593/starbucksk8s:.*|image: sandhya0593/starbucksk8s:$IMAGE_TAG|g" $KUBERNETES_DEPLOYMENT_FILE
+          git config --global user.name "slax508"
+          git config --global user.email "sankulaxman1998@gmail.com"
+          git add $KUBERNETES_DEPLOYMENT_FILE
+          git commit -m "Update deployment image to $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG"
+          git push
