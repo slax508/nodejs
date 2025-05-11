@@ -1,21 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: starbucks
-  labels:
-    app: starbucks
+  name: my-app
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: starbucks
+      app: my-app
   template:
     metadata:
       labels:
-        app: starbucks
+        app: my-app
     spec:
       containers:
-      - name: starbucks-container
-        image: sandhya0593/starbucksk8s:${{ github.sha }}
+      - name: my-app
+        image: sandhya0593/starbucksk8s:latest
         ports:
         - containerPort: 80
