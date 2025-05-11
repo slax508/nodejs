@@ -58,7 +58,7 @@ jobs:
           echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
           docker push sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}
 
-      # Step 8: Update Kubernetes deployment file
+      # Step 8: Update Kubernetes deployment files
       - name: Update Kubernetes deployment
         run: |
           sed -i "s|image: sandhya0593/starbucksk8ss:.*|image: sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}|" k8s/deployment.yml
