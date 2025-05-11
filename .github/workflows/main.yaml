@@ -4,63 +4,58 @@ on:
   push:
     branches:
       - main
-  pull_request:
+permissions:
+  contents: write # Required to push changes to the repository
+env:
+  DOCKER_USERNAME: sandhya0593 # Docker Hub username
+  DOCKER_REPO: starbuck # Docker Hub repository name
+  SONAR_PROJECT_KEY: starbuck # SonarQube project key
+  SONAR_HOST_URL: http://3.84.169.175:9000
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # SonarQube authentication token
+  KUBERNETES_DEPLOYMENT_FILE: k8s/deployment.yml # Kubernetes deployment file path
 
 jobs:
-  build-and-scan:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      # Step 1: Checkout the repository
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Java for SonarQube analysis
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'zulu'
-
-      # Step 3: SonarQube analysis (assuming SonarQube is configured)
-      # - name: SonarQube Scan
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   run: |
-      #     ./gradlew sonarqube \
-      #       -Dsonar.projectKey=your_project_key \
-      #       -Dsonar.host.url=https://sonarcloud.io
-
-      # Step 4: Build Docker image with unique tag
-      - name: Build Docker image
-        run: |
-          IMAGE_TAG=$(date +%s)
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          docker build -t sandhya0593/starbucksk8ss:$IMAGE_TAG .
-
-      # Step 5: Install Trivy for scanning
-     - name: Install Trivy
-       run: |
-        wget https://github.com/aquasecurity/trivy/releases/download/v0.62.1/trivy_0.62.1_Linux-64bit.tar.gz
-        tar -zxvf trivy_0.62.1_Linux-64bit.tar.gz
-        sudo mv trivy /usr/local/bin
-      # Step 6: Scan Docker image
-      - name: Scan Docker image
-        run: |
-          trivy image sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}
-
-      # Step 7: Push Docker image to registry
-      - name: Push Docker image
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-          docker push sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}
-
-      # Step 8: Update Kubernetes deployment files
-      - name: Update Kubernetes deployment
-        run: |
-          sed -i "s|image: sandhya0593/starbucksk8ss:.*|image: sandhya0593/starbucksk8ss:${{ env.IMAGE_TAG }}|" k8s/deployment.yml
-          echo "Updated image tag in k8s/deployment.yml to ${{ env.IMAGE_TAG }}"
       
+          
+
+      # Step 4: Build Docker image with a unique tag
+      - name: Build Docker Image
+        run: |
+          export IMAGE_TAG=${{ github.sha }}
+          docker build -t $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG .
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      # Step 5: Install Trivy and scan Docker image
+      - name: Install and Scan Docker Image with Trivy
+        run: |
+          # Install the latest version of Trivy
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+          export PATH=$PATH:$(pwd)/bin
+          # Scan the Docker image
+          trivy image --exit-code 1 --severity HIGH,CRITICAL $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG
+
+      # Step 6: Push Docker image to Docker Hub
+      - name: Push Docker Image
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u $DOCKER_USERNAME --password-stdin || exit 1
+          docker push $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG
+          docker tag $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG $DOCKER_USERNAME/$DOCKER_REPO:latest
+          docker push $DOCKER_USERNAME/$DOCKER_REPO:latest
+
+      # Step 7: Update Kubernetes deployment file with new image tag
+      - name: Update Kubernetes Deployment
+        run: |
+          sed -i "s|image: $DOCKER_USERNAME/$DOCKER_REPO:.*|image: $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG|g" $KUBERNETES_DEPLOYMENT_FILE
+          git config --global user.name "slax508"
+          git config --global user.email "sankulaxman1998@gmail.com"
+          git add $KUBERNETES_DEPLOYMENT_FILE
+          git commit -m "Update deployment image to $DOCKER_USERNAME/$DOCKER_REPO:$IMAGE_TAG"
+          git push
