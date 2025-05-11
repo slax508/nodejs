@@ -47,11 +47,6 @@ jobs:
           export PATH=$PATH:$(pwd)/bin
           trivy image --exit-code 0 --severity HIGH,CRITICAL sandhya0593/starbucksk8s:${{ github.sha }}
 
-      # Step 6: Scan the Docker images
-      - name: Scan Docker Image
-        run: |
-          trivy image sandhya0593/starbucksk8s:${{ github.sha }}
-
       # Step 7: Push Docker image to Docker Hub
       - name: Push Docker Image
         env:
