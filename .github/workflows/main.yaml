@@ -5,7 +5,7 @@ on:
     branches:
       - main
 permissions:
-  contents: write # Required to push changes to the repository
+  contents: write # Required to push changes to the repositorys
 env:
   DOCKER_USERNAME: sandhya0593 # Docker Hub username
   DOCKER_REPO: starbuck # Docker Hub repository name
