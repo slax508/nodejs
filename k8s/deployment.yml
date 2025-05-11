@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: starbucks-container
-        image: sandhya0593/starbucksk8s:{{image:tag}}
+        image: sandhya0593/starbucksk8s:${{ github.sha }}
         ports:
         - containerPort: 80
